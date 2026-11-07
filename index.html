@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#1a414e">
+  <meta name="description" content="一场120秒的海洋冒险。带领海龟寻找真正的水母，发现隐藏在海里的塑料。A bilingual 3D ocean adventure.">
+  <title>海龟的一口选择 · Turtle’s Choice</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230c5861'/%3E%3Cellipse cx='32' cy='33' rx='16' ry='19' fill='%23ddf5a8'/%3E%3Ccircle cx='32' cy='10' r='7' fill='%23ddf5a8'/%3E%3Cpath d='M18 22 7 16 10 33M46 22 57 16 54 33M21 46 12 55 25 50M43 46 52 55 39 50' fill='%23ddf5a8'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="style.css?v=1.6.0.1">
+</head>
+<body>
+  <div id="ocean" aria-hidden="true"></div><div class="vignette"></div><div id="hurt-flash"></div>
+  <header class="site-header">
+    <a class="brand" href="#" id="brand-home" aria-label="Turtle’s Choice home">
+      <svg viewBox="0 0 48 48" aria-hidden="true"><ellipse cx="24" cy="26" rx="10" ry="13"/><circle cx="24" cy="8" r="5"/><path d="M16 17 5 12 9 27M32 17 43 12 39 27M17 34 10 43 22 37M31 34 38 43 26 37"/></svg>
+      <span>TURTLE’S CHOICE<span class="brand-sub" data-i18n="brandSub">每一口，都是一个选择</span></span>
+    </a>
+    <div class="header-tools">
+      <div class="music-control"><button id="music-btn" class="icon-button" aria-label="背景音乐" title="背景音乐"><svg viewBox="0 0 24 24"><path d="M9 18V5l11-2v13M9 9l11-2"/><ellipse cx="6" cy="18" rx="3" ry="2"/><ellipse cx="17" cy="16" rx="3" ry="2"/></svg></button><input id="music-volume" type="range" min="0" max="100" value="65" aria-label="音乐音量" title="音乐音量"></div>
+      <button id="sound-btn" class="icon-button" aria-label="声音" title="声音"><svg id="sound-icon" viewBox="0 0 24 24"><path d="M11 5 6 9H3v6h3l5 4Z"/><path class="sound-wave" d="M15 8q4 4 0 8m3-11q7 7 0 14"/></svg></button>
+      <button id="quality-btn" class="icon-button quality-button" aria-label="切换画质" title="切换画质">HQ</button>
+      <button id="fullscreen-btn" class="icon-button" aria-label="全屏" title="全屏"><svg viewBox="0 0 24 24"><path d="M8 3H3v5m13-5h5v5M3 16v5h5m13-5v5h-5"/></svg></button>
+      <span class="tool-divider"></span><button id="lang-btn" class="lang-button" aria-label="Switch to English">EN <span>↗</span></button>
+    </div>
+  </header>
+
+  <main>
+    <section id="home" class="screen home-screen">
+      <div class="hero-copy">
+        <div class="eyebrow"><i></i><span data-i18n="eyebrow">一场关于选择的海洋冒险</span></div>
+        <h1 data-i18n-html="heroTitle">海龟的<br><em>一口选择</em></h1>
+        <p class="hero-description" data-i18n="heroDesc">看起来像水母的，未必是食物。潜入蓝色海洋，帮小海龟找到真正的美味。</p>
+        <div class="difficulty-picker" role="group" aria-labelledby="difficulty-label"><span id="difficulty-label" data-i18n="difficultyLabel">选择难度</span><div class="difficulty-options"><button id="difficulty-easy" aria-pressed="false" data-i18n="difficulty_easy">低 · 轻松观察</button><button id="difficulty-normal" aria-pressed="true" data-i18n="difficulty_normal">中 · 海洋探险</button><button id="difficulty-hard" aria-pressed="false" data-i18n="difficulty_hard">高 · 敏锐挑战</button></div><p id="difficulty-desc"></p></div><div class="hero-actions"><button id="start-btn" class="primary-button"><span data-i18n="start">开始海洋冒险</span><span class="button-arrow">↗</span></button><button id="quick-btn" class="text-button" data-i18n="quick">跳过教学，直接挑战 →</button></div>
+        <div class="field-links"><button id="guide-home-btn" class="text-button" data-i18n="guide">观察图鉴</button><span>·</span><button id="board-home-btn" class="text-button" data-i18n="leaderboard">今日记录</button><span>·</span><button id="booth-btn" class="text-button" aria-pressed="false" data-i18n="booth">摊位模式</button></div><div class="hero-facts"><div><strong>120<span>s</span></strong><span data-i18n="factTime">一次海洋之旅</span></div><div><strong>3<span>♥</span></strong><span data-i18n="factLives">珍惜每次机会</span></div><div><strong><b id="home-goal">10</b><span>+</span></strong><span data-i18n="factGoal">找到真正的水母</span></div></div>
+      </div>
+      <div class="turtle-picker"><span class="eyebrow" data-i18n="chooseTurtle">选择你的海洋伙伴</span><div class="turtle-options" role="group" aria-label="Turtle"><button id="turtle-leatherback" aria-pressed="true">棱皮龟</button><button id="turtle-green" aria-pressed="false">绿海龟</button><button id="turtle-hawksbill" aria-pressed="false">玳瑁</button><button id="turtle-loggerhead" aria-pressed="false">赤蠵龟</button></div><strong id="turtle-name"></strong><span id="turtle-latin" class="latin"></span><p id="turtle-description"></p><p class="turtle-note" id="turtle-game-note"></p></div>
+      <div class="home-bottom"><div class="keyboard-hint"><span class="tiny-key">W</span><span class="tiny-key">A</span><span class="tiny-key">S</span><span class="tiny-key">D</span><span data-i18n="moveHint">移动</span><span class="tiny-key auto-key">AUTO</span><span data-i18n="eatHint">靠近自动吸附</span></div><span id="booth-status" class="bottom-note" hidden></span><span id="desktop-note" class="bottom-note" data-i18n="desktopNote">为电脑体验设计 · 戴上耳机，潜入海里</span></div>
+    </section>
+
+    <section id="game-ui" class="screen game-screen" hidden>
+      <div class="game-top"><div class="status-card"><span class="stat-label" data-i18n="health">生命</span><div id="hearts" class="hearts" role="img" aria-label="生命: 3 / 3"></div></div><div class="stage-display"><span id="stage-num">01 / 03</span><strong id="stage-label"></strong><span id="practice-label" hidden data-i18n="practice">练习中 · 不计分</span></div><div class="status-card score-card"><span class="stat-label" data-i18n="score">得分</span><strong id="score-value">000</strong></div></div>
+      <div class="timer-row"><span class="timer-icon">◷</span><strong id="timer-value">02:00</strong><div class="timer-track"><div id="timer-fill"></div></div><span id="goal-count">0 / 10</span><span class="goal-label" data-i18n="jellies">水母</span><button id="pause-btn" class="icon-button small-pause" aria-label="暂停">Ⅱ</button></div>
+      <div class="streak-display" id="streak-display"><span data-i18n="streak">连续选对</span><strong id="streak-value">0</strong><span id="streak-pips" aria-hidden="true"></span></div><div id="notice" class="notice" role="status" aria-live="polite"></div>
+      <div id="stage-card" class="stage-card" role="status" hidden><span id="stage-card-number"></span><strong id="stage-card-title"></strong><p id="stage-card-desc"></p></div><div id="meal-feedback" class="meal-feedback" role="status" hidden></div><div id="milestone" class="milestone" role="status" hidden></div><div id="encounter-cue" class="encounter-cue"></div><div class="journey-track" aria-label="Journey"><span id="journey-0"></span><span id="journey-1"></span><span id="journey-2"></span></div><div id="difficulty-badge" class="difficulty-badge"></div><div id="bite-prompt" class="bite-prompt" hidden><span class="absorb-icon">≈</span><span id="bite-label" data-i18n="bitePrompt">正在靠近 · 移开仍可躲避</span></div>
+      <div id="tutorial-card" class="tutorial-card" hidden><span class="tutorial-step" id="tutorial-step"></span><h2 id="tutorial-title"></h2><p id="tutorial-text"></p><div id="tutorial-key" class="tutorial-key"></div><button id="tutorial-next" class="primary-button compact"><span data-i18n="next">继续</span><span>→</span></button><button id="tutorial-skip" class="text-button" data-i18n="skipTutorial">跳过教学</button></div>
+      <div class="game-bottom"><div class="keyboard-hint"><span class="tiny-key">W A S D</span><span data-i18n="moveHint">移动</span><span class="tiny-key auto-key">AUTO</span><span data-i18n="eatHint">靠近自动吸附</span><span class="tiny-key">ESC</span><span data-i18n="pause">暂停</span></div><span id="speed-note" class="speed-note"></span></div>
+      <div id="countdown" class="countdown" hidden>3</div>
+    </section>
+
+    <section id="pause-screen" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="paused-title" hidden><div class="modal pause-modal"><button id="pause-lang-btn" class="lang-button dialog-language">EN ↗</button><div class="eyebrow" data-i18n="takeBreath">TAKE A BREATH</div><h2 id="paused-title" data-i18n="paused">海洋在等你</h2><p data-i18n="pausedDesc">游戏已暂停，时间和生命都会保留。</p><button id="resume-btn" class="primary-button"><span data-i18n="resume">继续游动</span><span>→</span></button><button id="restart-btn" class="secondary-button" data-i18n="restart">重新挑战</button><button id="guide-pause-btn" class="text-button" data-i18n="guideFromPause">暂停着，去看看图鉴</button><button id="back-btn" class="text-button" data-i18n="backHome">返回首页</button></div></section>
+
+    <section id="results" class="modal-backdrop results-backdrop" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
+      <div id="result-layout" class="modal results-modal">
+        <div class="result-main">
+          <div class="result-symbol" id="result-symbol">✦</div><div class="eyebrow" id="result-eyebrow"></div><h2 id="result-title"></h2><p id="result-subtitle"></p>
+          <div class="result-stats"><div><strong id="result-score">0</strong><span data-i18n="totalScore">总得分</span></div><div><strong id="result-food">0</strong><span data-i18n="realFood">吃到水母</span></div><div><strong id="result-plastic">0</strong><span data-i18n="plasticEaten">误食垃圾</span></div></div>
+          <p id="result-difficulty" class="result-difficulty"></p><div class="result-streak"><span><span data-i18n="bestStreak">最佳连续</span> <strong id="result-streak">0</strong></span><span><span data-i18n="bonusPoints">连击奖励</span> <strong id="result-bonus">+0</strong></span></div>
+          <button class="rank-link" id="result-rank"></button>
+          <div class="next-challenge"><span class="eyebrow" data-i18n="nextChallenge">下一次潜游</span><strong id="challenge-title"></strong><p id="challenge-tip"></p></div>
+          <div class="eco-card"><div class="eco-symbol">≈</div><div><strong data-i18n="ecoTitle">海洋里的选择，本不该这么难。</strong><p data-i18n="ecoBody"></p><a href="https://www.fisheries.noaa.gov/species/leatherback-turtle" target="_blank" rel="noopener noreferrer" data-i18n="source">了解更多 · NOAA Fisheries ↗</a></div></div>
+          <p class="mechanic-note" data-i18n="mechanicNote"></p>
+          <button id="again-btn" class="primary-button"><span data-i18n="nextPlayer">下一位玩家</span><span>↗</span></button>
+          <div class="result-links"><button id="result-lang-btn" class="lang-button">EN ↗</button><button id="result-home-btn" class="text-button" data-i18n="backHome">返回首页</button><button id="board-result-btn" class="text-button" data-i18n="leaderboard">今日记录</button></div>
+          <p id="booth-countdown" class="booth-countdown" role="status" hidden></p>
+        </div>
+        <div class="review-panel"><div class="review-heading"><span class="eyebrow" id="review-eyebrow"></span><h3 id="review-title"></h3></div><div id="review-viewport" class="review-viewport" aria-hidden="true"><span id="review-pin-1" class="model-pin">1</span><span id="review-pin-2" class="model-pin">2</span></div><div class="review-copy"><ol class="clues"><li id="review-clue-1"></li><li id="review-clue-2"></li></ol><button id="review-guide-btn" class="text-button" data-i18n="reviewOpen">放大观察与旋转 ↗</button><div class="eco-action"><span data-i18n="reviewLesson">把这一点带回海洋</span><p id="review-tip"></p></div></div></div>
+      </div>
+    </section>
+    <section id="guide-screen" class="guide-screen" role="dialog" aria-modal="true" aria-labelledby="guide-title" hidden>
+      <div class="guide-top"><span class="eyebrow" data-i18n="guideEye">海洋辨认手册</span><div class="panel-tools"><button id="guide-lang-btn" class="lang-button">EN ↗</button><button id="guide-close-btn" class="secondary-button close-button"><span data-i18n="close">返回</span> ×</button></div></div>
+      <div id="guide-viewport" class="guide-viewport" tabindex="0" role="img" aria-label="旋转观察模型"><span id="guide-pin-1" class="model-pin">1</span><span id="guide-pin-2" class="model-pin">2</span><div class="rotate-caption" data-i18n="rotateHint">拖动旋转 · 方向键也可旋转</div></div>
+      <div class="guide-copy"><p data-i18n="guideIntro" class="guide-intro"></p><div id="guide-types" class="guide-types" role="group" aria-label="漂浮物"><button data-guide-type="jelly"></button><button data-guide-type="moon" aria-pressed="false">海月水母</button><button data-guide-type="compass" aria-pressed="false">条纹水母</button><button data-guide-type="bag"></button><button data-guide-type="balloon"></button><button data-guide-type="film"></button><button data-guide-type="glove"></button><button data-guide-type="bottle"></button><button data-guide-type="cup"></button><button data-guide-type="mask"></button></div><span class="specimen-kind" id="guide-kind"></span><h2 id="guide-title"></h2><ol class="clues"><li id="guide-clue-1"></li><li id="guide-clue-2"></li></ol><p id="guide-detail"></p><div class="guide-variants"><span id="guide-variant"></span><button id="guide-variant-btn" class="text-button" data-i18n="nextVariant">换一种形态</button><button id="guide-reset-btn" class="text-button" data-i18n="resetView">重置视角</button></div><div class="eco-action"><span data-i18n="reviewLesson"></span><p id="guide-tip"></p></div></div>
+    </section>
+    <section id="board-screen" class="modal-backdrop board-backdrop" role="dialog" aria-modal="true" aria-labelledby="board-title" hidden><div class="modal board-modal"><div class="board-top"><span class="eyebrow" id="board-date"></span><div class="panel-tools"><button id="board-lang-btn" class="lang-button">EN ↗</button><button id="board-close-btn" class="text-button"><span data-i18n="close">返回</span> ×</button></div></div><h2 id="board-title" data-i18n="dailyTitle">今天的海洋观察员</h2><p data-i18n="dailyDesc"></p><div class="board-filters" role="group" aria-label="Difficulty"><button id="board-easy" data-i18n="difficulty_easy" aria-pressed="false">低</button><button id="board-normal" data-i18n="difficulty_normal" aria-pressed="true">中</button><button id="board-hard" data-i18n="difficulty_hard" aria-pressed="false">高</button></div><p id="board-summary" class="board-summary"></p><div class="board-table-wrap"><table><thead><tr><th data-i18n="rank"></th><th data-i18n="explorer"></th><th data-i18n="score"></th><th data-i18n="bestStreak"></th></tr></thead><tbody id="board-body"></tbody></table><p id="board-empty" data-i18n="emptyBoard"></p></div><p id="board-storage-note" hidden data-i18n="storageUnavailable"></p></div></section>
+    <section id="loading" class="loading-screen"><div class="loading-mark">≈</div><p id="loading-label">正在潜入海洋 · Entering the ocean</p><div class="loading-line"></div></section>
+    <section id="error-screen" class="modal-backdrop" hidden><div class="modal"><h2 data-i18n="errorTitle">暂时无法进入海洋</h2><p data-i18n="errorBody">这个浏览器未能启动3D画面。请在支持 WebGL 2 的 Chrome、Edge 或 Firefox 中开启硬件加速后重试。</p><button class="primary-button" id="reload-btn" data-i18n="reload">重新加载</button></div></section>
+  </main>
+  <div id="toast" class="toast" role="status"></div>
+  <script type="module" src="game.js?v=1.6.0"></script>
+</body>
+</html>
