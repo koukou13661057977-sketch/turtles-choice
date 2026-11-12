@@ -2,11 +2,11 @@ import {TARGET_TYPES,TRASH_TYPES,isFood,VARIANT_COUNT} from './catalog.js?v=1.7.
 export {TRASH_TYPES} from './catalog.js';
 
 export const DURATION=120;
-export const GOAL=10;
+export const GOAL=13;
 export const DIFFICULTIES=Object.freeze({
   easy:Object.freeze({id:'easy',goal:8,speedScale:.78,spawnIntervalScale:1.18,pullGrace:.9,trashRatio:.30}),
-  normal:Object.freeze({id:'normal',goal:10,speedScale:1,spawnIntervalScale:1,pullGrace:.7,trashRatio:.42}),
-  hard:Object.freeze({id:'hard',goal:14,speedScale:1.18,spawnIntervalScale:.86,pullGrace:.6,trashRatio:.52})
+  normal:Object.freeze({id:'normal',goal:GOAL,speedScale:1.06,spawnIntervalScale:.98,pullGrace:.7,trashRatio:.49}),
+  hard:Object.freeze({id:'hard',goal:18,speedScale:1.25,spawnIntervalScale:.84,pullGrace:.6,trashRatio:.59})
 });
 export function difficultyConfig(id='normal'){return Object.hasOwn(DIFFICULTIES,id)?DIFFICULTIES[id]:DIFFICULTIES.normal;}
 export const ABSORB_RADIUS=1.35;

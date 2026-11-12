@@ -1,4 +1,4 @@
-import {difficultyConfig,reviewType} from './rules.js?v=1.7.0';
+import {difficultyConfig,reviewType} from './rules.js?v=1.8.0';
 import {rankedEntries} from './progress.js?v=1.7.0';
 import {TRASH_TYPES} from './catalog.js?v=1.7.0';
 

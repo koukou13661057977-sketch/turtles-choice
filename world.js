@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.js';
-import {ABSORB_RADIUS,MOUTH_Z} from './rules.js?v=1.7.0';
+import {ABSORB_RADIUS,MOUTH_Z} from './rules.js?v=1.8.0';
 import {isFood} from './catalog.js?v=1.7.0';
 import {createTurtleModel,createTargetModels,createDistantTurtle,animateTurtle,animateJelly} from './models.js?v=1.7.0';
 import {makeShallows,makeSeagrassBank,makeCoralGarden,makeSand,makeWaterSurface,makeLightShafts,makeParticles,makeFish} from './habitat.js?v=1.7.0';

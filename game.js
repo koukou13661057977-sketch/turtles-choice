@@ -1,14 +1,14 @@
-import {OceanWorld} from './world.js?v=1.7.0';
-import {DURATION,GOAL,DIFFICULTIES,difficultyConfig,TRASH_TYPES,newRound,startRound,tickRound,collectNearby,advanceTargets,stageSpeed,reviewType} from './rules.js?v=1.7.0';
+import {OceanWorld} from './world.js?v=1.8.0';
+import {DURATION,DIFFICULTIES,difficultyConfig,TRASH_TYPES,newRound,startRound,tickRound,collectNearby,advanceTargets,stageSpeed,reviewType} from './rules.js?v=1.8.0';
 import {OceanMusic} from './music.js?v=1.7.0';
-import {STRINGS} from './i18n.js?v=1.7.0';
+import {STRINGS} from './i18n.js?v=1.8.0';
 import {BOARD_KEY,BOOTH_RETURN_SECONDS,localDay,readBoard,addResult,rankedEntries} from './progress.js?v=1.7.0';
 
 import {FOOD_TYPES,isFood} from './catalog.js?v=1.7.0';
 
 import {TURTLE_IDS,turtleConfig,TURTLE_GAME_NOTE} from './turtles.js?v=1.7.0';
-import {planEncounter} from './encounters.js?v=1.7.0';
-import {nextChallenge} from './debrief.js?v=1.7.0';
+import {planEncounter} from './encounters.js?v=1.8.0';
+import {nextChallenge} from './debrief.js?v=1.8.0';
 import {createPerformanceMonitor} from './performance.js?v=1.7.0';
 import {VICTORY_SECONDS,VICTORY_REDUCED_SECONDS} from './victory.js?v=1.7.0';
 
