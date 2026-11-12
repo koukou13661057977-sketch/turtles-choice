@@ -1,6 +1,6 @@
 import {OceanWorld} from './world.js?v=1.8.0';
 import {DURATION,DIFFICULTIES,difficultyConfig,TRASH_TYPES,newRound,startRound,tickRound,collectNearby,advanceTargets,stageSpeed,reviewType} from './rules.js?v=1.8.0';
-import {OceanMusic} from './music.js?v=1.7.0';
+import {OceanMusic} from './music.js?v=1.8.1';
 import {STRINGS} from './i18n.js?v=1.8.0';
 import {BOARD_KEY,BOOTH_RETURN_SECONDS,localDay,readBoard,addResult,rankedEntries} from './progress.js?v=1.7.0';
 
@@ -55,8 +55,15 @@ function initAudio(){
 }
 function audioLevel(){const muted=['paused','guide','board','error'].includes(mode);if(master)master.gain.setTargetAtTime(soundEnabled&&!muted?.32:0,audioContext.currentTime,.15);music?.setState({enabled:musicEnabled&&soundEnabled,paused:muted,volume:musicVolume});}
 function tone(f,duration=.17,delay=0,end=f){if(!audioContext||!soundEnabled)return;const at=audioContext.currentTime+delay,o=audioContext.createOscillator(),g=audioContext.createGain();o.type='sine';o.frequency.setValueAtTime(f,at);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),at+duration);g.gain.setValueAtTime(.001,at);g.gain.exponentialRampToValueAtTime(.19,at+.015);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(master);o.start(at);o.stop(at+duration+.02);o.onended=()=>{o.disconnect();g.disconnect();};}
-function playGood(bonus=0){tone(260,.12,0,510);tone(660,.17,.07);tone(880,.23,.17);if(bonus){tone(1047,.3,.27);tone(1319,.35,.36);}}
-function playBad(){tone(190,.27,0,80);tone(145,.25,.12,70);}
+function playGood(bonus=0){
+  music?.duck(bonus ? .8 : .43);
+  tone(260,.12,0,510);tone(660,.17,.07);tone(880,.23,.17);
+  if(bonus){tone(1047,.3,.27);tone(1319,.35,.36);}
+}
+function playBad(){
+  music?.duck(.46);
+  tone(190,.27,0,80);tone(145,.25,.12,70);
+}
 function showToast(key){toastKey=key;$('toast').textContent=tr(key);$('toast').classList.add('show');toastTime=3.5;}
 function notice(key,bad=false,duration=2.3,vars={}){noticeKey=key;noticeVars=vars;noticeTime=duration;$('notice').textContent=tr(key,vars);$('notice').classList.toggle('bad',bad);$('notice').classList.add('show');}
 function isTutorialRound(){
@@ -154,9 +161,11 @@ function finish(){
   if(round.outcome==='success'){
     victory={elapsed:0,reduced:!!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches};
     mode='victory';world.clearTargets();world.setMode('victory');screens();
+    music?.duck(1.25);
     tone(523,.27);tone(659,.3,.17);tone(784,.48,.35);tone(1047,.62,.63);
     return;
   }
+  music?.duck(.4);
   tone(247,.35);showResults();
 }
 function showResults(){
@@ -187,7 +196,10 @@ function autoAbsorb(dt){
       if(reachedGoal||target.bonus){
         milestoneTime=2.4;milestoneKey=reachedGoal?'goalCelebration':'comboCelebration';milestoneStreak=round.streak;
         $('milestone').hidden=false;$('milestone').textContent=tr(milestoneKey,{n:milestoneStreak});
-        if(reachedGoal){tone(1047,.22,.22);tone(1568,.45,.4);}
+        if(reachedGoal){
+          music?.duck(.88);
+          tone(1047,.22,.22);tone(1568,.45,.4);
+        }
       }
       if(isFood(target.type)){
         playGood(target.bonus);notice(target.bonus?'combo':round.jellies===difficultyConfig(round.difficulty).goal?'goalReached':'good',false,2.3,{n:round.streak});
