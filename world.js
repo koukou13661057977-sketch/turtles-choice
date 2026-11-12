@@ -1,9 +1,10 @@
 import * as THREE from './vendor/three.module.js';
-import {ABSORB_RADIUS,MOUTH_Z} from './rules.js?v=1.6.0';
-import {isFood} from './catalog.js?v=1.6.0';
-import {createTurtleModel,createTargetModels,createDistantTurtle,animateTurtle,animateJelly} from './models.js?v=1.6.0';
-import {makeShallows,makeSeagrassBank,makeCoralGarden,makeSand,makeWaterSurface,makeLightShafts,makeParticles,makeFish} from './habitat.js?v=1.6.0';
-export {createTargetModels} from './models.js?v=1.6.0';
+import {ABSORB_RADIUS,MOUTH_Z} from './rules.js?v=1.7.0';
+import {isFood} from './catalog.js?v=1.7.0';
+import {createTurtleModel,createTargetModels,createDistantTurtle,animateTurtle,animateJelly} from './models.js?v=1.7.0';
+import {makeShallows,makeSeagrassBank,makeCoralGarden,makeSand,makeWaterSurface,makeLightShafts,makeParticles,makeFish} from './habitat.js?v=1.7.0';
+import {victoryPose,createVictoryBubbles} from './victory.js?v=1.7.0';
+export {createTargetModels} from './models.js?v=1.7.0';
 
 const C=THREE;
 const clamp=C.MathUtils.clamp;
@@ -44,6 +45,7 @@ export class OceanWorld {
       biome.visible=stage===0;this.scene.add(biome);this.biomes.push(biome);
     }
     this.particles=makeParticles();this.scene.add(this.particles);
+    this.victoryBubbles=createVictoryBubbles();this.scene.add(this.victoryBubbles.mesh);
     this.fish=makeFish(this.timeUniform);this.scene.add(this.fish);this.fishDummy=new C.Object3D();
     this.distantTurtles=[createDistantTurtle(),createDistantTurtle()];this.distantTurtles.forEach(t=>this.scene.add(t));
     for(let i=0;i<5;i++){
@@ -156,7 +158,7 @@ export class OceanWorld {
   aim(target){this.aimed=target;}
   update(dt,model){
     if(this.guideEnabled){this.renderGuide(model.guideRect,dt);return;}
-    const freeze=model.paused;
+    const freeze=model.paused||!!model.victory?.reduced;
     // Paused/board overlays are HTML; retain their unchanged ocean framebuffer.
     if(freeze&&this.lastFrozen&&this.mainFrameValid&&!model.reviewRect)return;
     const tdt=freeze?0:dt;this.time+=tdt;const t=this.time;this.timeUniform.value=t;
@@ -168,8 +170,24 @@ export class OceanWorld {
     this.turtle.rotation.z=smooth(this.turtle.rotation.z,-model.vx*.05*(1-h)+Math.sin(t*.55)*.025*h,tdt*5);
     this.turtle.rotation.x=smooth(this.turtle.rotation.x,model.vy*.038*(1-h)+.47*h,tdt*5);
     this.biteTime=Math.max(0,this.biteTime-tdt);this.happyTime=Math.max(0,this.happyTime-tdt);animateTurtle(this.turtle,t,{slow:model.slow,vx:model.vx,vy:model.vy,bite:this.biteTime,happy:this.happyTime});
-    const camY=C.MathUtils.lerp(4.5+model.player.y*.6,3.6,h);
-    this.camera.position.set(model.player.x*.25*(1-h),camY,C.MathUtils.lerp(12,13.5,h));this.camera.lookAt(C.MathUtils.lerp(model.player.x*.25,0,h),C.MathUtils.lerp(-2.4+model.player.y*.6,1.1,h),C.MathUtils.lerp(-8,-5,h));
+    const firstPerson=this.mode==='play'&&model.view==='first';
+    const fov=firstPerson?(aspect<1?78:63):48;
+    if(this.camera.fov!==fov){
+      this.camera.fov=fov;
+      this.camera.updateProjectionMatrix();
+    }
+    this.turtle.visible=!firstPerson;
+    this.shadow.visible=!firstPerson;
+    if(firstPerson){
+      const mouth=this.mouth(model.player);
+      const yaw=model.viewYaw??0,pitch=(model.viewPitch??0)-.08;
+      const eye=this.camera.position;
+      eye.set(mouth.x,mouth.y+.14,mouth.z+.72);
+      this.camera.lookAt(eye.x+Math.sin(yaw)*Math.cos(pitch),eye.y+Math.sin(pitch),eye.z-Math.cos(yaw)*Math.cos(pitch));
+    }else{
+      const camY=C.MathUtils.lerp(4.5+model.player.y*.6,3.6,h);
+      this.camera.position.set(model.player.x*.25*(1-h),camY,C.MathUtils.lerp(12,13.5,h));this.camera.lookAt(C.MathUtils.lerp(model.player.x*.25,0,h),C.MathUtils.lerp(-2.4+model.player.y*.6,1.1,h),C.MathUtils.lerp(-8,-5,h));
+    }
     this.shadow.position.x=this.turtle.position.x+.8;this.shadow.position.z=this.turtle.position.z-.5;
     this.shadow.material.uniforms.uOpacity.value=.1+(1-h)*.035;
     const scroll=model.moving?model.speed:home?1.0:0;
@@ -225,16 +243,38 @@ export class OceanWorld {
     }
     for(const target of gone){this.releaseTarget(target);this.targets.splice(this.targets.indexOf(target),1);}
     this.ring.visible=this.mode==='play'&&model.autoActive&&!freeze;
-    if(this.ring.visible){const m=this.mouth(model.player),pulling=this.targets.some(x=>x.pulling&&!x.eaten);this.ring.position.set(m.x,m.y,m.z-.65);this.ring.quaternion.copy(this.camera.quaternion);this.ring.scale.setScalar(pulling?.94+Math.sin(t*5)*.04:1);this.ringMaterial.opacity=pulling?.50:.16;if(pulling)this.ring.rotateZ(t*.5);}
+    if(this.ring.visible){
+      const mouth=this.mouth(model.player),pulling=this.targets.some(x=>x.pulling&&!x.eaten);
+      this.ring.position.set(mouth.x,mouth.y,mouth.z-(firstPerson?1:.65));
+      this.ring.quaternion.copy(this.camera.quaternion);
+      this.ring.scale.setScalar((firstPerson?.15:1)*(pulling?.94+Math.sin(t*5)*.04:1));
+      this.ringMaterial.opacity=pulling?.56:firstPerson?.30:.16;
+      if(pulling)this.ring.rotateZ(t*.5);
+    }
     this.bitePulse.visible=this.biteTime>0&&!freeze;this.mealSpark.visible=this.bitePulse.visible;
     if(this.bitePulse.visible){
       const m=this.mouth(model.player),progress=1-this.biteTime/.48,level=this.mealLevel??1;
       const mealColor=isFood(this.lastMealType)?(level>1.5?'#9fffe4':level>1?'#ffe37a':'#fff1a8'):'#ff946e';
-      this.bitePulse.position.set(m.x,m.y,m.z);this.bitePulse.quaternion.copy(this.camera.quaternion);this.bitePulse.scale.setScalar((.9+progress*2.3)*level);this.bitePulse.material.opacity=(1-progress)*.8;this.bitePulse.material.color.set(mealColor);
+      this.bitePulse.position.set(m.x,m.y,m.z-(firstPerson?.35:0));this.bitePulse.quaternion.copy(this.camera.quaternion);this.bitePulse.scale.setScalar((firstPerson?.40:1)*(.9+progress*2.3)*level);this.bitePulse.material.opacity=(1-progress)*.8;this.bitePulse.material.color.set(mealColor);
       const p=this.mealSpark.geometry.attributes.position;
       for(let i=0;i<p.count;i++){const a=i/p.count*Math.PI*2,r=.15+progress*(.55+(i%3)*.12)*level;p.setXYZ(i,m.x+Math.cos(a)*r,m.y+Math.sin(a)*r+progress*.15,m.z+Math.sin(i)*r*.5);}p.needsUpdate=true;
       this.mealSpark.material.size=.075*level;this.mealSpark.material.color.set(mealColor);this.mealSpark.material.opacity=(1-progress)*.85;
     }
+    const victory=model.victory;
+    if(victory){
+      const pose=victoryPose(victory.elapsed,model.player,aspect,victory.reduced);
+      this.turtle.visible=true;
+      this.turtle.position.set(pose.x,pose.y,pose.z);
+      this.turtle.rotation.set(pose.pitch,pose.yaw,pose.roll);
+      this.turtle.scale.setScalar(.92);
+      if(!victory.reduced){
+        for(const fin of this.turtle.userData.fins)fin.rotation.z+=fin.userData.side*pose.stroke*.18;
+      }
+      this.camera.position.set(pose.cameraX,pose.cameraY,pose.cameraZ);
+      this.camera.lookAt(pose.x,pose.y+.14,pose.z);
+      this.sun.intensity=Math.max(this.sun.intensity,3.35);
+      this.victoryBubbles.update(victory.elapsed,victory.reduced?null:pose);
+    }else this.victoryBubbles.update(0,null);
     this.renderer.render(this.scene,this.camera);this.mainFrameValid=true;this.lastFrozen=!!freeze;
     if(model.reviewRect)this.renderGuide(model.reviewRect,dt,true);
   }

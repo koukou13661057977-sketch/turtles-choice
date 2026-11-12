@@ -1,4 +1,4 @@
-import {TARGET_TYPES,TRASH_TYPES,isFood,VARIANT_COUNT} from './catalog.js?v=1.6.0';
+import {TARGET_TYPES,TRASH_TYPES,isFood,VARIANT_COUNT} from './catalog.js?v=1.7.0';
 export {TRASH_TYPES} from './catalog.js';
 
 export const DURATION=120;

@@ -1,5 +1,5 @@
 import * as THREE from './vendor/three.module.js';
-import {isFood,VARIANT_COUNT} from './catalog.js?v=1.6.0';
+import {isFood,VARIANT_COUNT} from './catalog.js?v=1.7.0';
 
 const TAU = Math.PI * 2;
 const sphere = new THREE.SphereGeometry(1, 32, 24);

@@ -1,5 +1,5 @@
-import {FOOD_TYPES,TRASH_TYPES} from './catalog.js?v=1.6.0';
-import {difficultyConfig} from './rules.js?v=1.6.0';
+import {FOOD_TYPES,TRASH_TYPES} from './catalog.js?v=1.7.0';
+import {difficultyConfig} from './rules.js?v=1.7.0';
 
 // A stage owns its wave index. These authored encounters change the decision
 // the player makes without changing attraction, health or species physics.
