@@ -1,7 +1,7 @@
-import {OceanWorld} from './world.js?v=1.8.2';
+import {OceanWorld} from './world.js?v=1.9.0';
 import {DURATION,DIFFICULTIES,difficultyConfig,TRASH_TYPES,newRound,startRound,tickRound,collectNearby,advanceTargets,stageSpeed,reviewType} from './rules.js?v=1.8.0';
 import {OceanMusic} from './music.js?v=1.8.1';
-import {STRINGS} from './i18n.js?v=1.8.2';
+import {STRINGS} from './i18n.js?v=1.9.0';
 import {BOARD_KEY,BOOTH_RETURN_SECONDS,localDay,readBoard,addResult,rankedEntries} from './progress.js?v=1.7.0';
 
 import {FOOD_TYPES,isFood} from './catalog.js?v=1.7.0';
@@ -10,7 +10,11 @@ import {TURTLE_IDS,turtleConfig,TURTLE_GAME_NOTE} from './turtles.js?v=1.7.0';
 import {planEncounter} from './encounters.js?v=1.8.0';
 import {nextChallenge} from './debrief.js?v=1.8.0';
 import {createPerformanceMonitor} from './performance.js?v=1.7.0';
-import {VICTORY_SECONDS,VICTORY_REDUCED_SECONDS} from './victory.js?v=1.8.2';
+import {VICTORY_SECONDS,VICTORY_REDUCED_SECONDS,SPECIAL_VICTORY_SECONDS} from './victory.js?v=1.9.0';
+
+const CORAL_LIGHT_SCORE=450;
+const CORAL_REVEAL_SECONDS=8.25;
+const prefersReducedMotion=()=>!!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 const $=id=>document.getElementById(id);
 function saved(key,fallback){try{return localStorage.getItem(key)??fallback;}catch{return fallback;}}
@@ -117,9 +121,21 @@ function turnView(yaw,pitch){
   viewYaw=Math.max(-.38,Math.min(.38,viewYaw+yaw));
   viewPitch=Math.max(-.25,Math.min(.25,viewPitch+pitch));
 }
+function earnedCoralLight(){
+  return round.outcome==='success'&&round.score>=CORAL_LIGHT_SCORE;
+}
+function updateCoralReveal(){
+  const revealing=mode==='victory'&&victory?.special&&(victory.reduced||victory.elapsed>=CORAL_REVEAL_SECONDS);
+  $('coral-reveal').hidden=!revealing;
+}
 function screens(){
   $('home').hidden=mode!=='home';$('game-ui').hidden=!['playing','tutorial','countdown','paused'].includes(mode);$('pause-screen').hidden=mode!=='paused';$('results').hidden=mode!=='results';$('guide-screen').hidden=mode!=='guide';$('board-screen').hidden=mode!=='board';
   $('victory-results').hidden=mode!=='victory';
+  const coral=(mode==='victory'||mode==='results')&&earnedCoralLight();
+  document.body.classList.toggle('coral-victory',coral);
+  document.body.classList.toggle('coral-results',coral&&mode==='results');
+  document.body.classList.toggle('coral-reduced',coral&&(victory?.reduced??prefersReducedMotion()));
+  updateCoralReveal();
   const tut=mode==='tutorial'||mode==='paused'&&previousMode==='tutorial';$('tutorial-card').hidden=!tut;$('practice-label').hidden=!tut;$('countdown').hidden=mode!=='countdown';$('streak-display').hidden=tut||mode==='countdown';
   updateViewControls();
   document.body.classList.toggle('playing',mode!=='home');document.body.classList.toggle('guide-open',mode==='guide');layoutDirty=true;renderElapsed=0;audioLevel();
@@ -160,7 +176,8 @@ function finish(){
   keys.clear();vx=vy=0;world.aim(null);$('bite-prompt').hidden=true;$('hurt-flash').classList.remove('flash');
   if(!resultSaved){resultId=globalThis.crypto?.randomUUID?.()??`${Date.now()}-${Math.random()}`;board=addResult(currentBoard(),round,resultId);storageAvailable=save(BOARD_KEY,JSON.stringify(board));resultSaved=true;}
   if(round.outcome==='success'){
-    victory={elapsed:0,reduced:!!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches};
+    victory={elapsed:0,reduced:prefersReducedMotion(),special:earnedCoralLight()};
+    if(victory.special)$('coral-reveal-score').textContent=round.score;
     mode='victory';world.clearTargets();world.setMode('victory');screens();
     $('victory-results').focus({preventScroll:true});
     music?.duck(.45);
@@ -172,7 +189,7 @@ function finish(){
 }
 function showResults(){
   if(mode==='results')return;
-  victory=null;mode='results';world.setMode('results');
+  world.setMode('results',victory);victory=null;mode='results';
   reviewModel=reviewType(round);world.setGuide(reviewModel,round.mistakeVariants[reviewModel]??0);lastInput=performance.now();screens();renderResults();
   if(!storageAvailable)showToast('storageUnavailable');$('result-title').focus({preventScroll:true});
 }
@@ -181,6 +198,22 @@ function advanceVictory(dt){
   const previous=victory.elapsed;
   victory.elapsed+=Math.min(dt,.1);
   if(victory.reduced)return;
+  if(victory.special){
+    if(previous<2.3&&victory.elapsed>=2.3){
+      music?.duck(.62);
+      tone(523,.28,0,659);tone(784,.38,.16,988);
+    }
+    if(previous<6.6&&victory.elapsed>=6.6){
+      music?.duck(.9);
+      tone(659,.31);tone(880,.34,.14);tone(1175,.48,.27);
+    }
+    if(previous<CORAL_REVEAL_SECONDS&&victory.elapsed>=CORAL_REVEAL_SECONDS){
+      updateCoralReveal();
+      music?.duck(1.45);
+      tone(784,.27);tone(988,.27,.15);tone(1175,.32,.30);tone(1568,.65,.47);
+    }
+    return;
+  }
   if(previous<.4&&victory.elapsed>=.4)tone(784,.48,0,988);
   if(previous<3.45&&victory.elapsed>=3.45){
     music?.duck(.78);
@@ -189,7 +222,7 @@ function advanceVictory(dt){
 }
 function renderResults(){
   const p=round.outcome==='success'?'success':round.outcome==='hurt'?'hurt':'hungry';
-  $('result-symbol').textContent=p==='success'?'✦':'≈';$('result-eyebrow').textContent=tr(`${p}Eye`);$('result-title').textContent=tr(`${p}Title`);$('result-subtitle').textContent=tr(`${p}Sub`,{n:difficultyConfig(round.difficulty).goal});
+  $('result-symbol').textContent=p==='success'?'✦':'≈';$('result-eyebrow').textContent=tr(earnedCoralLight()?'coralLight':`${p}Eye`);$('result-title').textContent=tr(`${p}Title`);$('result-subtitle').textContent=tr(`${p}Sub`,{n:difficultyConfig(round.difficulty).goal});
   $('result-difficulty').textContent=tr(`difficulty_${round.difficulty}`)+' · '+tr('roundGoal',{n:difficultyConfig(round.difficulty).goal});
   $('result-score').textContent=round.score;$('result-food').textContent=round.jellies;$('result-plastic').textContent=round.plastic;$('result-streak').textContent=round.bestStreak;$('result-bonus').textContent=`+${round.bonus}`;
   const rank=rankedEntries(currentBoard(),round.difficulty).findIndex(x=>x.id===resultId)+1;$('result-rank').textContent=rank?tr('yourRank',{n:rank})+' ↗':tr('outsideBoard')+' ↗';
@@ -356,6 +389,7 @@ function bind(){
   document.addEventListener('keyup',e=>keys.delete(e.code));
   for(const event of ['pointerdown','pointermove','wheel'])document.addEventListener(event,()=>{lastInput=performance.now();},{passive:true});
   document.addEventListener('visibilitychange',()=>{
+    document.body.classList.toggle('coral-paused',document.hidden);
     if(document.hidden)pause();
     else last=lastInput=performance.now();
     audioLevel();
@@ -422,7 +456,10 @@ function frame(now){
     if(profiling)profileRenders+=Math.max(0,(world.renderer.info?.render?.frame??0)-renderFrameBefore);
     if(performanceMonitor.sample({dt:renderDt,workMs:performance.now()-renderStart,active:mode==='playing',visible:!document.hidden,highQuality})&&world.applyAdaptiveQuality())showToast('qualityAdaptive');
   }
-  if(victory&&victory.elapsed>=(victory.reduced?VICTORY_REDUCED_SECONDS:VICTORY_SECONDS))showResults();
+  if(victory){
+    const duration=victory.reduced?VICTORY_REDUCED_SECONDS:victory.special?SPECIAL_VICTORY_SECONDS:VICTORY_SECONDS;
+    if(victory.elapsed>=duration)showResults();
+  }
   if(mode==='guide')updatePins('guide',guideRect);if(mode==='results')updatePins('review',reviewRect);if(mode==='playing')updateHUD();
   if(profiling){
     profileSeconds+=raw;profileFrames++;profileWorkMs+=performance.now()-workStart;profileMaxGapMs=Math.max(profileMaxGapMs,raw*1000);if(raw>.1)profileSlowFrames++;

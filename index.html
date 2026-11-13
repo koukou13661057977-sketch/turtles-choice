@@ -6,7 +6,7 @@
   <meta name="description" content="一场120秒的海洋冒险。带领海龟寻找真正的水母，发现隐藏在海里的塑料。A 3D ocean adventure.">
   <title>海龟的一口选择 · Turtle’s Choice</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='18' fill='%230c5861'/%3E%3Cellipse cx='32' cy='33' rx='16' ry='19' fill='%23ddf5a8'/%3E%3Ccircle cx='32' cy='10' r='7' fill='%23ddf5a8'/%3E%3Cpath d='M18 22 7 16 10 33M46 22 57 16 54 33M21 46 12 55 25 50M43 46 52 55 39 50' fill='%23ddf5a8'/%3E%3C/svg%3E">
-  <link rel="stylesheet" href="style.css?v=1.8.2">
+  <link rel="stylesheet" href="style.css?v=1.9.0">
 </head>
 <body>
   <div id="ocean" aria-hidden="true"></div><div class="vignette"></div><div id="hurt-flash"></div>
@@ -61,6 +61,10 @@
 
     <section id="pause-screen" class="modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="paused-title" hidden><div class="modal pause-modal"><select id="pause-lang-btn" class="language-select dialog-language" aria-label="游戏语言"><option value="zh" lang="zh-Hans">简体中文</option><option value="zh-Hant" lang="zh-Hant">繁體中文</option><option value="en" lang="en">English</option></select><div class="eyebrow" data-i18n="takeBreath">TAKE A BREATH</div><h2 id="paused-title" data-i18n="paused">海洋在等你</h2><p data-i18n="pausedDesc">游戏已暂停，时间和生命都会保留。</p><button id="resume-btn" class="primary-button"><span data-i18n="resume">继续游动</span><span>→</span></button><button id="restart-btn" class="secondary-button" data-i18n="restart">重新挑战</button><button id="guide-pause-btn" class="text-button" data-i18n="guideFromPause">暂停着，去看看图鉴</button><button id="back-btn" class="text-button" data-i18n="backHome">返回首页</button></div></section>
 
+    <aside id="coral-reveal" class="coral-reveal" role="status" aria-atomic="true" hidden>
+      <span class="coral-reveal-title" data-i18n="coralLight">珊瑚之光</span>
+      <div class="coral-reveal-points"><strong id="coral-reveal-score"></strong><span data-i18n="score">得分</span></div>
+    </aside>
     <button id="victory-results" class="victory-results secondary-button" type="button" data-i18n="viewResults" hidden>查看成绩</button>
 
     <section id="results" class="modal-backdrop results-backdrop" role="dialog" aria-modal="true" aria-labelledby="result-title" hidden>
@@ -90,6 +94,6 @@
     <section id="error-screen" class="modal-backdrop" hidden><div class="modal"><h2 data-i18n="errorTitle">暂时无法进入海洋</h2><p data-i18n="errorBody">这个浏览器未能启动3D画面。请在支持 WebGL 2 的 Chrome、Edge 或 Firefox 中开启硬件加速后重试。</p><button class="primary-button" id="reload-btn" data-i18n="reload">重新加载</button></div></section>
   </main>
   <div id="toast" class="toast" role="status"></div>
-  <script type="module" src="game.js?v=1.8.2"></script>
+  <script type="module" src="game.js?v=1.9.0"></script>
 </body>
 </html>

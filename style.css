@@ -192,3 +192,155 @@
   background: #103a46f2;
   border-color: #d8f7f580;
 }
+
+.coral-victory {
+  --coral-gold: #ffdf9f;
+  --coral-mint: #b5f5df;
+}
+.coral-reveal {
+  position: fixed;
+  z-index: 7;
+  left: max(18px, env(safe-area-inset-left));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: min(300px, calc(100% - 152px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+  isolation: isolate;
+  overflow: hidden;
+  padding: 13px clamp(11px, 2.4vw, 24px) 16px;
+  border: 1px solid #e4ecbb9c;
+  border-radius: 12px;
+  background:
+    radial-gradient(ellipse at right top, #276b62 0%, transparent 72%),
+    linear-gradient(126deg, #102b34f7, #164346f5);
+  box-shadow: 0 12px 48px #0b262b86, inset 0 1px 0 #fff5c343;
+  pointer-events: none;
+  animation: coral-arrive .66s cubic-bezier(.15,.75,.25,1) both;
+}
+.coral-reveal::after,
+.coral-victory #result-eyebrow::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: linear-gradient(111deg, transparent 18%, #baffed35 42%, #fff3b25e 54%, transparent 76%);
+  transform: translateX(-110%);
+  animation: coral-reflection .95s .16s ease-out both;
+}
+.coral-reveal-title {
+  display: block;
+  color: var(--coral-mint);
+  font-size: clamp(12px, 1.4vw, 15px);
+  font-weight: 600;
+  letter-spacing: .13em;
+}
+.coral-reveal-points {
+  display: flex;
+  align-items: baseline;
+  gap: 9px;
+  margin-top: 4px;
+  color: #f5ead1;
+  font-size: 11px;
+}
+.coral-reveal-points strong {
+  color: var(--coral-gold);
+  font-family: var(--serif);
+  font-size: clamp(37px, 8vw, 66px);
+  font-variant-numeric: lining-nums tabular-nums;
+  font-weight: 400;
+  line-height: .96;
+  text-shadow: 0 0 20px #ffdc9477;
+  animation: coral-score-land .78s cubic-bezier(.18,.8,.3,1) both;
+}
+.coral-victory .victory-results:hover { border-color: var(--coral-gold); background: #164c53; }
+
+.coral-victory #results {
+  background: linear-gradient(180deg, transparent 0%, #0d34394d 39%, #0a2634cf 100%);
+}
+.coral-victory #result-layout {
+  border-color: #e6dbac8c;
+  box-shadow: 0 16px 62px #091f2de0, 0 0 32px #8df4cb2b;
+}
+.coral-victory .result-main {
+  background:
+    radial-gradient(ellipse at left top, #3072687a 0%, transparent 62%),
+    linear-gradient(148deg, #1b4a50, #15343f 65%);
+}
+.coral-victory .review-heading,
+.coral-victory .review-copy { background: #163d46; }
+.coral-victory #result-eyebrow {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  overflow: hidden;
+  padding: 7px 11px;
+  border: 1px solid #d0f4c384;
+  border-radius: 6px;
+  color: #f5f6d3;
+  background: #20655d;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: .13em;
+  animation: coral-arrive .48s ease-out both;
+}
+.coral-victory #result-eyebrow::before {
+  content: "";
+  width: 8px;
+  height: 8px;
+  border: 1px solid var(--coral-gold);
+  box-shadow: 0 0 6px #ffdf9f80;
+  transform: rotate(45deg);
+}
+.coral-victory .result-stats {
+  align-items: center;
+  background: linear-gradient(90deg, #afecc313, transparent 68%);
+}
+.coral-victory #result-score {
+  color: var(--coral-gold);
+  font-size: clamp(34px, 4.8vw, 51px);
+  font-variant-numeric: lining-nums tabular-nums;
+  line-height: .96;
+  text-shadow: 0 0 15px #ffdc9460;
+  animation: coral-score-land .65s cubic-bezier(.18,.8,.3,1) both;
+}
+@media (min-height: 601px) {
+  .coral-victory #results {
+    align-items: flex-start;
+    padding-top: max(112px, 14dvh);
+  }
+  .coral-victory #result-layout {
+    max-height: calc(100dvh - max(112px, 14dvh) - 20px);
+  }
+}
+
+@keyframes coral-arrive {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@keyframes coral-reflection {
+  from { transform: translateX(-110%); }
+  to { transform: translateX(110%); }
+}
+@keyframes coral-score-land {
+  from { opacity: 0; transform: translateY(9px) scale(.84); }
+  64% { opacity: 1; transform: translateY(0) scale(1.05); }
+  to { opacity: 1; transform: none; }
+}
+.coral-paused .coral-reveal,
+.coral-paused .coral-reveal::after,
+.coral-paused .coral-reveal-points strong,
+.coral-paused #result-score,
+.coral-paused #result-eyebrow,
+.coral-paused #result-eyebrow::after { animation-play-state: paused; }
+.coral-reduced .coral-reveal,
+.coral-reduced .coral-reveal::after,
+.coral-reduced .coral-reveal-points strong,
+.coral-reduced #result-score,
+.coral-reduced #result-eyebrow,
+.coral-reduced #result-eyebrow::after { animation: none; }
+@media (prefers-reduced-motion: reduce) {
+  .coral-reveal,
+  .coral-reveal::after,
+  .coral-reveal-points strong,
+  .coral-victory #result-score,
+  .coral-victory #result-eyebrow,
+  .coral-victory #result-eyebrow::after { animation: none; }
+}
