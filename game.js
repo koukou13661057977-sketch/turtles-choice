@@ -1,7 +1,7 @@
-import {OceanWorld} from './world.js?v=1.8.0';
+import {OceanWorld} from './world.js?v=1.8.2';
 import {DURATION,DIFFICULTIES,difficultyConfig,TRASH_TYPES,newRound,startRound,tickRound,collectNearby,advanceTargets,stageSpeed,reviewType} from './rules.js?v=1.8.0';
 import {OceanMusic} from './music.js?v=1.8.1';
-import {STRINGS} from './i18n.js?v=1.8.0';
+import {STRINGS} from './i18n.js?v=1.8.2';
 import {BOARD_KEY,BOOTH_RETURN_SECONDS,localDay,readBoard,addResult,rankedEntries} from './progress.js?v=1.7.0';
 
 import {FOOD_TYPES,isFood} from './catalog.js?v=1.7.0';
@@ -10,7 +10,7 @@ import {TURTLE_IDS,turtleConfig,TURTLE_GAME_NOTE} from './turtles.js?v=1.7.0';
 import {planEncounter} from './encounters.js?v=1.8.0';
 import {nextChallenge} from './debrief.js?v=1.8.0';
 import {createPerformanceMonitor} from './performance.js?v=1.7.0';
-import {VICTORY_SECONDS,VICTORY_REDUCED_SECONDS} from './victory.js?v=1.7.0';
+import {VICTORY_SECONDS,VICTORY_REDUCED_SECONDS} from './victory.js?v=1.8.2';
 
 const $=id=>document.getElementById(id);
 function saved(key,fallback){try{return localStorage.getItem(key)??fallback;}catch{return fallback;}}
@@ -53,7 +53,7 @@ function initAudio(){
     const noise=audioContext.createBufferSource();noise.buffer=buffer;noise.loop=true;const filter=audioContext.createBiquadFilter();filter.type='lowpass';filter.frequency.value=380;noise.connect(filter);filter.connect(ambience);noise.start();audioLevel();
   }catch{soundEnabled=false;}
 }
-function audioLevel(){const muted=['paused','guide','board','error'].includes(mode);if(master)master.gain.setTargetAtTime(soundEnabled&&!muted?.32:0,audioContext.currentTime,.15);music?.setState({enabled:musicEnabled&&soundEnabled,paused:muted,volume:musicVolume});}
+function audioLevel(){const muted=document.hidden||['paused','guide','board','error'].includes(mode);if(master)master.gain.setTargetAtTime(soundEnabled&&!muted?.32:0,audioContext.currentTime,.15);music?.setState({enabled:musicEnabled&&soundEnabled,paused:muted,volume:musicVolume});}
 function tone(f,duration=.17,delay=0,end=f){if(!audioContext||!soundEnabled)return;const at=audioContext.currentTime+delay,o=audioContext.createOscillator(),g=audioContext.createGain();o.type='sine';o.frequency.setValueAtTime(f,at);o.frequency.exponentialRampToValueAtTime(Math.max(20,end),at+duration);g.gain.setValueAtTime(.001,at);g.gain.exponentialRampToValueAtTime(.19,at+.015);g.gain.exponentialRampToValueAtTime(.001,at+duration);o.connect(g);g.connect(master);o.start(at);o.stop(at+duration+.02);o.onended=()=>{o.disconnect();g.disconnect();};}
 function playGood(bonus=0){
   music?.duck(bonus ? .8 : .43);
@@ -119,6 +119,7 @@ function turnView(yaw,pitch){
 }
 function screens(){
   $('home').hidden=mode!=='home';$('game-ui').hidden=!['playing','tutorial','countdown','paused'].includes(mode);$('pause-screen').hidden=mode!=='paused';$('results').hidden=mode!=='results';$('guide-screen').hidden=mode!=='guide';$('board-screen').hidden=mode!=='board';
+  $('victory-results').hidden=mode!=='victory';
   const tut=mode==='tutorial'||mode==='paused'&&previousMode==='tutorial';$('tutorial-card').hidden=!tut;$('practice-label').hidden=!tut;$('countdown').hidden=mode!=='countdown';$('streak-display').hidden=tut||mode==='countdown';
   updateViewControls();
   document.body.classList.toggle('playing',mode!=='home');document.body.classList.toggle('guide-open',mode==='guide');layoutDirty=true;renderElapsed=0;audioLevel();
@@ -161,17 +162,30 @@ function finish(){
   if(round.outcome==='success'){
     victory={elapsed:0,reduced:!!globalThis.matchMedia?.('(prefers-reduced-motion: reduce)').matches};
     mode='victory';world.clearTargets();world.setMode('victory');screens();
-    music?.duck(1.25);
-    tone(523,.27);tone(659,.3,.17);tone(784,.48,.35);tone(1047,.62,.63);
+    $('victory-results').focus({preventScroll:true});
+    music?.duck(.45);
+    tone(523,.27);tone(659,.27,.15);
     return;
   }
   music?.duck(.4);
   tone(247,.35);showResults();
 }
 function showResults(){
+  if(mode==='results')return;
   victory=null;mode='results';world.setMode('results');
   reviewModel=reviewType(round);world.setGuide(reviewModel,round.mistakeVariants[reviewModel]??0);lastInput=performance.now();screens();renderResults();
-  if(!storageAvailable)showToast('storageUnavailable');$('again-btn').focus({preventScroll:true});
+  if(!storageAvailable)showToast('storageUnavailable');$('result-title').focus({preventScroll:true});
+}
+function advanceVictory(dt){
+  if(!victory||document.hidden)return;
+  const previous=victory.elapsed;
+  victory.elapsed+=Math.min(dt,.1);
+  if(victory.reduced)return;
+  if(previous<.4&&victory.elapsed>=.4)tone(784,.48,0,988);
+  if(previous<3.45&&victory.elapsed>=3.45){
+    music?.duck(.78);
+    tone(784,.28);tone(988,.28,.15);tone(1175,.55,.31);
+  }
 }
 function renderResults(){
   const p=round.outcome==='success'?'success':round.outcome==='hurt'?'hurt':'hungry';
@@ -304,6 +318,7 @@ function bind(){
   for(const id of TURTLE_IDS)$(`turtle-${id}`).onclick=()=>{if(mode!=='home')return;selectedTurtle=id;save('turtle-species',id);world?.setTurtle(id);renderTurtle();};
   for(const id of Object.keys(DIFFICULTIES)){$(`difficulty-${id}`).onclick=()=>{selectedDifficulty=id;save('turtle-difficulty',id);round=newRound(id);renderDifficulty();updateHUD();};$(`board-${id}`).onclick=()=>{boardDifficulty=id;renderBoard();};}
   $('start-btn').onclick=startTutorial;$('quick-btn').onclick=beginCountdown;
+  $('victory-results').onclick=()=>{if(mode==='victory')showResults();};
   $('tutorial-next').onclick=()=>{if(!tutorialDone)return;if(tutorialStep===2)beginCountdown();else{tutorialStep++;setupTutorial();}};
   $('tutorial-skip').onclick=beginCountdown;$('pause-btn').onclick=pause;$('resume-btn').onclick=resume;$('restart-btn').onclick=beginCountdown;$('back-btn').onclick=goHome;$('again-btn').onclick=beginCountdown;$('result-home-btn').onclick=goHome;
   $('guide-home-btn').onclick=()=>openGuide();$('guide-pause-btn').onclick=()=>openGuide();$('review-guide-btn').onclick=()=>openGuide(reviewModel,round.mistakeVariants[reviewModel]??0);
@@ -332,7 +347,7 @@ function bind(){
   document.addEventListener('keydown',e=>{
     lastInput=performance.now();if(e.altKey||e.ctrlKey||e.metaKey)return;trapFocus(e);
     if(document.activeElement?.tagName==='SELECT')return;
-    if(e.code==='Escape'){e.preventDefault();if(['guide','board'].includes(mode))closePanel();else if(mode==='paused')resume();else pause();return;}
+    if(e.code==='Escape'){e.preventDefault();if(['guide','board'].includes(mode))closePanel();else if(mode==='victory'&&!e.repeat)showResults();else if(mode==='paused')resume();else pause();return;}
     if(mode==='guide'&&document.activeElement===$('guide-viewport')&&['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.code)){e.preventDefault();world.rotateGuide(e.code==='ArrowLeft'?-12:e.code==='ArrowRight'?12:0,e.code==='ArrowUp'?-10:e.code==='ArrowDown'?10:0);return;}
     if((e.code==='KeyR'&&mode==='results')||(e.code==='Enter'&&['home','results'].includes(mode)&&!['BUTTON','A','INPUT'].includes(document.activeElement?.tagName))){e.preventDefault();if(!e.repeat)beginCountdown();return;}
     if(!['playing','tutorial'].includes(mode)||document.activeElement?.tagName==='INPUT')return;
@@ -340,7 +355,11 @@ function bind(){
   });
   document.addEventListener('keyup',e=>keys.delete(e.code));
   for(const event of ['pointerdown','pointermove','wheel'])document.addEventListener(event,()=>{lastInput=performance.now();},{passive:true});
-  document.addEventListener('visibilitychange',()=>{if(document.hidden)pause();else lastInput=performance.now();});window.addEventListener('blur',()=>{pause();keys.clear();});
+  document.addEventListener('visibilitychange',()=>{
+    if(document.hidden)pause();
+    else last=lastInput=performance.now();
+    audioLevel();
+  });window.addEventListener('blur',()=>{pause();keys.clear();});
   if(globalThis.ResizeObserver){const observer=new ResizeObserver(()=>{layoutDirty=true;});for(const id of ['guide-viewport','review-viewport','result-layout'])observer.observe($(id));}
   window.addEventListener('resize',()=>{layoutDirty=true;});document.addEventListener('scroll',()=>{layoutDirty=true;},true);
   window.addEventListener('storage',e=>{if(e.key===BOARD_KEY){board=readBoard(e.newValue);if(mode==='board')renderBoard();if(mode==='results')renderResults();}});
@@ -380,11 +399,11 @@ function frame(now){
   const raw=Math.max(0,(now-last)/1000);last=now;
   // A stalled/hidden window must not consume a round while the player cannot react.
   if(raw>1)pause();
-  const dt=Math.min(raw,1),frozen=['paused','guide','board','error'].includes(mode);
+  const dt=Math.min(raw,1),frozen=document.hidden||['paused','guide','board','error'].includes(mode);
   // Keep the clock, steering, spawning and attraction on the same elapsed time.
   // Only simulation is substepped; scene animation and rendering run once below.
   if(!frozen){const steps=Math.ceil(dt/.05);for(let i=0;i<steps;i++)updateSimulation(dt/steps);}
-  if(victory&&mode==='victory'&&!document.hidden)victory.elapsed+=Math.min(dt,.1);
+  if(mode==='victory')advanceVictory(dt);
   toastTime=Math.max(0,toastTime-dt);if(!toastTime)$('toast').classList.remove('show');
   const autoActive=['playing','tutorial'].includes(mode),pulling=world.targets.some(t=>t.pulling&&!t.eaten);
   $('bite-prompt').hidden=!(autoActive&&(pulling||world.biteTime>0));hudText('bite-label',tr(pulling?'bitePrompt':'swallowed'));

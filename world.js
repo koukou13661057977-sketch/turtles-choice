@@ -3,7 +3,7 @@ import {ABSORB_RADIUS,MOUTH_Z} from './rules.js?v=1.8.0';
 import {isFood} from './catalog.js?v=1.7.0';
 import {createTurtleModel,createTargetModels,createDistantTurtle,animateTurtle,animateJelly} from './models.js?v=1.7.0';
 import {makeShallows,makeSeagrassBank,makeCoralGarden,makeSand,makeWaterSurface,makeLightShafts,makeParticles,makeFish} from './habitat.js?v=1.7.0';
-import {victoryPose,createVictoryBubbles} from './victory.js?v=1.7.0';
+import {VICTORY_SECONDS,victoryPose,createVictoryBubbles,createVictoryLight} from './victory.js?v=1.8.2';
 export {createTargetModels} from './models.js?v=1.7.0';
 
 const C=THREE;
@@ -46,6 +46,10 @@ export class OceanWorld {
     }
     this.particles=makeParticles();this.scene.add(this.particles);
     this.victoryBubbles=createVictoryBubbles();this.scene.add(this.victoryBubbles.mesh);
+    this.victoryGlow=createVictoryLight();this.scene.add(this.victoryGlow);
+    this.victoryFill=new C.DirectionalLight('#fff0d3',0);
+    this.victoryFill.position.set(8,11,6);this.scene.add(this.victoryFill);
+    this.victoryStart=null;this.victoryEnd=null;
     this.fish=makeFish(this.timeUniform);this.scene.add(this.fish);this.fishDummy=new C.Object3D();
     this.distantTurtles=[createDistantTurtle(),createDistantTurtle()];this.distantTurtles.forEach(t=>this.scene.add(t));
     for(let i=0;i<5;i++){
@@ -137,7 +141,16 @@ export class OceanWorld {
     next.position.copy(previous.position);next.rotation.copy(previous.rotation);next.scale.copy(previous.scale);
     this.scene.remove(previous);this.scene.add(next);this.turtle=next;this.turtleSpecies=id;this.mainFrameValid=false;return next;
   }
-  setMode(mode){if(this.mode!==mode)this.mainFrameValid=false;this.mode=mode;}
+  setMode(mode){
+    if(this.mode===mode)return;
+    if(mode==='victory'){
+      const {x:pitch,y:yaw,z:roll}=this.turtle.rotation;
+      this.victoryStart={pitch,yaw,roll,scale:this.turtle.scale.x};
+    }else if(mode!=='results'){
+      this.victoryStart=null;this.victoryEnd=null;
+    }
+    this.mainFrameValid=false;this.mode=mode;
+  }
   releaseTarget(target){
     this.scene.remove(target.mesh);const key=`${target.type}/${target.variant}`,pool=this.meshPool.get(key)??[];
     // Geometry/materials belong to the templates and are shared: never dispose them here.
@@ -156,14 +169,51 @@ export class OceanWorld {
   }
   mouth(player){return {x:player.x,y:player.y+.05,z:MOUTH_Z};}
   aim(target){this.aimed=target;}
+  updateVictory(victory,player,pose){
+    if(!pose){
+      this.victoryGlow.visible=false;
+      this.victoryFill.intensity=0;
+      this.victoryBubbles.update(0,null);
+      return;
+    }
+    const {elapsed,reduced}=victory;
+    this.turtle.visible=true;this.shadow.visible=false;
+    this.turtle.position.set(pose.x,pose.y,pose.z);
+    this.turtle.rotation.set(pose.pitch,pose.yaw,pose.roll);
+    this.turtle.scale.setScalar(pose.scale);
+
+    const {head,jaw,fins,eyes}=this.turtle.userData;
+    head.rotation.y+=.14*pose.gesture;
+    head.rotation.x-=.08*pose.gesture;
+    jaw.rotation.x=-.22*pose.gesture;
+    for(const eye of eyes)eye.scale.y=C.MathUtils.lerp(eye.scale.y,1.16,pose.gesture);
+    for(const fin of fins){
+      const side=fin.userData.side;
+      const greeting=side<0?.38+.30*pose.wave:.13;
+      fin.rotation.z=C.MathUtils.lerp(fin.rotation.z,side*greeting,pose.gesture);
+      fin.rotation.y=C.MathUtils.lerp(fin.rotation.y,side*(side<0?-.14:.06),pose.gesture);
+    }
+
+    this.camera.position.set(pose.cameraX,pose.cameraY,pose.cameraZ);
+    this.camera.lookAt(pose.x,pose.focusY,pose.z);
+    this.victoryGlow.visible=pose.light>0;
+    this.victoryGlow.position.set(pose.x-3,11.95,pose.z-4);
+    this.victoryGlow.material.uniforms.uLight.value=pose.light;
+    this.victoryGlow.material.uniforms.uTime.value=reduced?0:elapsed;
+    this.victoryFill.intensity=1.35*pose.light;
+    this.victoryBubbles.update(elapsed,reduced||elapsed>=VICTORY_SECONDS?null:player);
+  }
   update(dt,model){
     if(this.guideEnabled){this.renderGuide(model.guideRect,dt);return;}
-    const freeze=model.paused||!!model.victory?.reduced;
+    const heldVictory=this.mode==='results'?this.victoryEnd:null;
+    const victory=model.victory??heldVictory;
+    const freeze=model.paused||!!victory?.reduced||!!heldVictory;
     // Paused/board overlays are HTML; retain their unchanged ocean framebuffer.
     if(freeze&&this.lastFrozen&&this.mainFrameValid&&!model.reviewRect)return;
     const tdt=freeze?0:dt;this.time+=tdt;const t=this.time;this.timeUniform.value=t;
     const home=this.mode==='home';this.homeBlend=smooth(this.homeBlend,home?1:0,tdt*2.2);const h=this.homeBlend;
     const aspect=innerWidth/innerHeight,homeX=aspect>1.4?3.7:2.6;
+    const pose=victory?victoryPose(victory.elapsed,model.player,aspect,victory.reduced,this.victoryStart??{}):null;
     this.turtle.position.set(C.MathUtils.lerp(model.player.x,homeX,h),C.MathUtils.lerp(model.player.y,1.5+Math.sin(t*.65)*.13,h),C.MathUtils.lerp(4.1,.7,h));
     this.turtle.scale.setScalar(C.MathUtils.lerp(.77,clamp(aspect*.88,.95,1.45),h));
     this.turtle.rotation.y=smooth(this.turtle.rotation.y,C.MathUtils.lerp(-model.vx*.035,2.30,h),tdt*5);
@@ -171,7 +221,7 @@ export class OceanWorld {
     this.turtle.rotation.x=smooth(this.turtle.rotation.x,model.vy*.038*(1-h)+.47*h,tdt*5);
     this.biteTime=Math.max(0,this.biteTime-tdt);this.happyTime=Math.max(0,this.happyTime-tdt);animateTurtle(this.turtle,t,{slow:model.slow,vx:model.vx,vy:model.vy,bite:this.biteTime,happy:this.happyTime});
     const firstPerson=this.mode==='play'&&model.view==='first';
-    const fov=firstPerson?(aspect<1?78:63):48;
+    const fov=pose?.fov??(firstPerson?(aspect<1?78:63):48);
     if(this.camera.fov!==fov){
       this.camera.fov=fov;
       this.camera.updateProjectionMatrix();
@@ -260,21 +310,8 @@ export class OceanWorld {
       for(let i=0;i<p.count;i++){const a=i/p.count*Math.PI*2,r=.15+progress*(.55+(i%3)*.12)*level;p.setXYZ(i,m.x+Math.cos(a)*r,m.y+Math.sin(a)*r+progress*.15,m.z+Math.sin(i)*r*.5);}p.needsUpdate=true;
       this.mealSpark.material.size=.075*level;this.mealSpark.material.color.set(mealColor);this.mealSpark.material.opacity=(1-progress)*.85;
     }
-    const victory=model.victory;
-    if(victory){
-      const pose=victoryPose(victory.elapsed,model.player,aspect,victory.reduced);
-      this.turtle.visible=true;
-      this.turtle.position.set(pose.x,pose.y,pose.z);
-      this.turtle.rotation.set(pose.pitch,pose.yaw,pose.roll);
-      this.turtle.scale.setScalar(.92);
-      if(!victory.reduced){
-        for(const fin of this.turtle.userData.fins)fin.rotation.z+=fin.userData.side*pose.stroke*.18;
-      }
-      this.camera.position.set(pose.cameraX,pose.cameraY,pose.cameraZ);
-      this.camera.lookAt(pose.x,pose.y+.14,pose.z);
-      this.sun.intensity=Math.max(this.sun.intensity,3.35);
-      this.victoryBubbles.update(victory.elapsed,victory.reduced?null:pose);
-    }else this.victoryBubbles.update(0,null);
+    if(model.victory)this.victoryEnd={elapsed:VICTORY_SECONDS,reduced:model.victory.reduced};
+    this.updateVictory(victory,model.player,pose);
     this.renderer.render(this.scene,this.camera);this.mainFrameValid=true;this.lastFrozen=!!freeze;
     if(model.reviewRect)this.renderGuide(model.reviewRect,dt,true);
   }

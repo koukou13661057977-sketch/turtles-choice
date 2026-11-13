@@ -178,3 +178,17 @@
   .tutorial-card .compact { display: inline-flex; width: auto; min-height: 38px; gap: 12px; }
   .tutorial-card > .text-button { display: inline-block; margin: 0 0 0 12px; }
 }
+
+.victory-results {
+  position: fixed;
+  z-index: 7;
+  right: max(18px, env(safe-area-inset-right));
+  bottom: max(18px, env(safe-area-inset-bottom));
+  width: auto;
+  min-height: 44px;
+  margin: 0;
+  padding: 10px 16px;
+  color: #f5fff8;
+  background: #103a46f2;
+  border-color: #d8f7f580;
+}

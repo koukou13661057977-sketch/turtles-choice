@@ -515,3 +515,6 @@ STRINGS['zh-Hant']={
   challengeTip_streak:'下次試試連續選對 {streak} 次。每連吃 5 隻水母都有額外獎勵。',
   qualityAdaptive:'已降低解像度，讓畫面更流暢。可按畫質按鈕恢復。'
 };
+STRINGS.zh.viewResults='查看成绩';
+STRINGS.en.viewResults='View results';
+STRINGS['zh-Hant'].viewResults='查看成績';
